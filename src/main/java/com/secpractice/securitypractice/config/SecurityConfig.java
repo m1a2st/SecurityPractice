@@ -1,24 +1,17 @@
 package com.secpractice.securitypractice.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 
-import javax.servlet.Filter;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
+import static com.secpractice.securitypractice.utils.ResponseUtils.responseJsonWriter;
 
 /**
  * @Author
@@ -27,11 +20,17 @@ import java.io.PrintWriter;
  * @Description
  */
 @Configuration
+@Log4j2
 @EnableWebSecurity
 public class SecurityConfig{
 
-    public SecurityConfig() {
+    private final AuthenticationSuccessHandler customerASHandler;
+    private final AuthenticationFailureHandler customerAFHandler;
+
+    public SecurityConfig(AuthenticationFailureHandler customerAFHandler, AuthenticationSuccessHandler customerASHandler) {
         super();
+        this.customerAFHandler = customerAFHandler;
+        this.customerASHandler = customerASHandler;
     }
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -39,12 +38,13 @@ public class SecurityConfig{
                 .cors()
                 .and()
                 .authorizeHttpRequests()
+                .antMatchers("/login","/login/failure").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .formLogin()
-                .loginProcessingUrl("/process")
-                .successForwardUrl("/login/success")
-                .failureForwardUrl("/login/failure")
+                .loginProcessingUrl("/login")
+                .successHandler(customerASHandler)
+                .failureHandler(customerAFHandler)
                 .and()
                 .logout()
                 .logoutUrl("/logout")
@@ -57,33 +57,13 @@ public class SecurityConfig{
     }
 
     public LogoutHandler customerLogoutHandler(){
-        return new LogoutHandler() {
-            @Override
-            public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-
-            }
+        return (request, response, authentication) -> {
+            log.info("logout handler is running....");
         };
     }
     @Bean
     public LogoutSuccessHandler customerLogoutSuccessHandler () {
-        return new LogoutSuccessHandler() {
-            @Override
-            public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-
-            }
-
-            private static void responseJsonWriter(HttpServletResponse response,String msg) throws IOException {
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.setCharacterEncoding("utf-8");
-                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                ObjectMapper objectMapper = new ObjectMapper();
-                String resBody = objectMapper.writeValueAsString(msg);
-                PrintWriter printWriter = response.getWriter();
-                printWriter.print(resBody);
-                printWriter.flush();
-                printWriter.close();
-            }
-        };
+        return (request, response, authentication) -> responseJsonWriter(response, authentication.getName());
     }
 
 
