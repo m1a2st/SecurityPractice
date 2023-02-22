@@ -4,18 +4,15 @@ import com.secpractice.securitypractice.utils.JwtTokenUtils;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -70,6 +67,18 @@ public class WebBean {
 
     @Bean
     public AuthenticationFailureHandler customerAfHandler() {
-        return (request, response, exception) -> responseJsonWriter(response,"login fail");
+        return (request, response, exception) -> responseJsonWriter(response, "login fail");
+    }
+
+    @Bean
+    public LogoutHandler customerLogoutHandler() {
+        return (request, response, authentication) -> {
+            log.info("logout handler is running....");
+        };
+    }
+
+    @Bean
+    public LogoutSuccessHandler customerLogoutSuccessHandler() {
+        return (request, response, authentication) -> responseJsonWriter(response, authentication.getName());
     }
 }
