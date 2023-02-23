@@ -1,6 +1,6 @@
 package com.secpractice.securitypractice.controller.view;
 
-import com.secpractice.securitypractice.entity.LoginUser;
+import com.secpractice.securitypractice.Security.LoginUser;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,7 +25,7 @@ public class UserView {
 
     public UserView toView(LoginUser loginUser){
         return UserView.builder()
-                .userName(loginUser.getUserName())
+                .userName(loginUser.getUser().getUserId())
                 .authority("A")
                 .build();
     }

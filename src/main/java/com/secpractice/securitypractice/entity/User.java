@@ -13,10 +13,11 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class LoginUser {
+@AllArgsConstructor
+public class User {
 
-    private String userName;
+    private String userId;
     private String pwd;
+    private String Authorities;
 }

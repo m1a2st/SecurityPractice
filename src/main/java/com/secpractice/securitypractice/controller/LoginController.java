@@ -1,7 +1,6 @@
 package com.secpractice.securitypractice.controller;
 
 import com.secpractice.securitypractice.controller.view.UserView;
-import com.secpractice.securitypractice.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,12 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/login")
 public class LoginController {
-
-    private final UserService userService;
-
-    public LoginController(UserService userService) {
-        this.userService = userService;
-    }
 
     @PostMapping("/failure")
     public ResponseEntity<UserView> loginFail(){

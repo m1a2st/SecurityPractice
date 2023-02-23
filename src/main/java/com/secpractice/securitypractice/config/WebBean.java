@@ -1,9 +1,12 @@
 package com.secpractice.securitypractice.config;
 
+import com.secpractice.securitypractice.Security.LoginUserService;
+import com.secpractice.securitypractice.Security.WebAuthenticationProvider;
 import com.secpractice.securitypractice.utils.JwtTokenUtils;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -29,8 +32,9 @@ import static com.secpractice.securitypractice.utils.ResponseUtils.responseJsonW
 @Configuration
 @Log4j2
 public class WebBean {
+
     @Bean
-    public BCryptPasswordEncoder bCryptPasswordEncoder(){
+    public BCryptPasswordEncoder bCryptPasswordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
@@ -58,8 +62,6 @@ public class WebBean {
             map.put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             map.put("msg", "success_login");
             map.put("name", authentication.getName());
-//            Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
-//            Set<String> role = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
             String token = JwtTokenUtils.generateToken(map);
             responseJsonWriter(response, token);
         };
@@ -67,14 +69,12 @@ public class WebBean {
 
     @Bean
     public AuthenticationFailureHandler customerAfHandler() {
-        return (request, response, exception) -> responseJsonWriter(response, "login fail");
+        return (request, response, exception) -> responseJsonWriter(response, "login fail......");
     }
 
     @Bean
     public LogoutHandler customerLogoutHandler() {
-        return (request, response, authentication) -> {
-            log.info("logout handler is running....");
-        };
+        return (request, response, authentication) -> log.info("logout handler is running....");
     }
 
     @Bean
