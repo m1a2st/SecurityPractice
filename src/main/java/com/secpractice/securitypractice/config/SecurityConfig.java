@@ -1,24 +1,18 @@
 package com.secpractice.securitypractice.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
-
-import javax.servlet.Filter;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
 
 /**
  * @Author
@@ -28,63 +22,90 @@ import java.io.PrintWriter;
  */
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig{
+public class SecurityConfig {
+    private final AuthenticationSuccessHandler customerASHandler;
+    private final AuthenticationFailureHandler customerAFHandler;
+    private final LogoutHandler customerLogoutHandler;
+    private final LogoutSuccessHandler customerLogoutSuccessHandler;
+    private final UserDetailsService userDetailsService;
 
-    public SecurityConfig() {
+    public SecurityConfig(AuthenticationFailureHandler customerAFHandler,
+                          AuthenticationSuccessHandler customerASHandler,
+                          LogoutHandler customerLogoutHandler,
+                          LogoutSuccessHandler customerLogoutSuccessHandler, UserDetailsService userDetailsService) {
         super();
+        this.customerAFHandler = customerAFHandler;
+        this.customerASHandler = customerASHandler;
+        this.customerLogoutHandler = customerLogoutHandler;
+        this.customerLogoutSuccessHandler = customerLogoutSuccessHandler;
+        this.userDetailsService = userDetailsService;
     }
+
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf().disable()
+    @Order(1)
+    public SecurityFilterChain apiLoginFilterChain(HttpSecurity http) throws Exception {
+        http.antMatcher("/api/v1/login")
+                .csrf().disable()
+                .cors()
+                .and()
+                .authorizeHttpRequests()
+                .antMatchers("/login", "/login/failure").permitAll()
+                .anyRequest().authenticated()
+                .and()
+                .formLogin()
+                .loginProcessingUrl("/login")
+                .successHandler(customerASHandler)
+                .failureHandler(customerAFHandler)
+                .and()
+                .logout()
+                .logoutUrl("/logout")
+                .clearAuthentication(true)
+                .invalidateHttpSession(true)
+                .addLogoutHandler(customerLogoutHandler)
+                .logoutSuccessHandler(customerLogoutSuccessHandler);
+        return http.build();
+    }
+
+    @Bean
+    public SecurityFilterChain fromLoginFilterChain(HttpSecurity http) throws Exception {
+        http.antMatcher("/login/v1")
+                .csrf().disable()
                 .cors()
                 .and()
                 .authorizeHttpRequests()
                 .anyRequest().authenticated()
                 .and()
                 .formLogin()
-                .loginProcessingUrl("/process")
-                .successForwardUrl("/login/success")
-                .failureForwardUrl("/login/failure")
+                .loginProcessingUrl("/login")
+                .successForwardUrl("/index")
+                .failureForwardUrl("/logout")
                 .and()
                 .logout()
                 .logoutUrl("/logout")
                 .clearAuthentication(true)
-                .deleteCookies("CookieName")
                 .invalidateHttpSession(true)
                 .addLogoutHandler(customerLogoutHandler())
                 .logoutSuccessHandler(customerLogoutSuccessHandler());
         return http.build();
     }
 
-    public LogoutHandler customerLogoutHandler(){
-        return new LogoutHandler() {
-            @Override
-            public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
+    public LogoutHandler customerLogoutHandler() {
+        return (request, response, authentication) -> {
 
-            }
         };
     }
+
     @Bean
-    public LogoutSuccessHandler customerLogoutSuccessHandler () {
-        return new LogoutSuccessHandler() {
-            @Override
-            public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public LogoutSuccessHandler customerLogoutSuccessHandler() {
+        return (request, response, authentication) -> {
 
-            }
-
-            private static void responseJsonWriter(HttpServletResponse response,String msg) throws IOException {
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.setCharacterEncoding("utf-8");
-                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                ObjectMapper objectMapper = new ObjectMapper();
-                String resBody = objectMapper.writeValueAsString(msg);
-                PrintWriter printWriter = response.getWriter();
-                printWriter.print(resBody);
-                printWriter.flush();
-                printWriter.close();
-            }
         };
     }
 
-
+    @Bean
+    public AuthenticationProvider customerAuthenticationProvider() {
+        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+        daoAuthenticationProvider.setUserDetailsService(userDetailsService);
+        return daoAuthenticationProvider;
+    }
 }
