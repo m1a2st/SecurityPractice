@@ -58,8 +58,6 @@ public class WebBean {
             map.put("time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             map.put("msg", "success_login");
             map.put("name", authentication.getName());
-//            Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
-//            Set<String> role = authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
             String token = JwtTokenUtils.generateToken(map);
             responseJsonWriter(response, token);
         };
